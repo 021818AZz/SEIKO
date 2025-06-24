@@ -458,6 +458,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Obter dados do usuário do localStorage
         const userData = JSON.parse(localStorage.getItem('userData'));
         const phone = userData?.phone;
         
@@ -467,6 +468,7 @@
             return;
         }
 
+        // Elementos da UI
         const loadingElement = document.getElementById('loading');
         const totalValueElement = document.querySelector('.total-value');
         const teamCountElement = document.querySelector('.small-circle-value');
@@ -499,19 +501,20 @@
             window.location.href = 'equipe2.html';
         });
 
-        let totalReceita = 0;
+        // Variáveis para armazenar os dados
+        let totalReceitas = 0;
         let totalEquipe = 0;
         let nivel1Users = [];
         let nivel2Users = [];
         let nivel3Users = [];
         let myInviteCode = '';
+        let currentUserData = null;
 
         // Função para girar os círculos
         function startSpinning() {
             mainCircle.style.animation = 'spin 1s linear infinite';
             smallCircle.style.animation = 'spin 1s linear infinite';
             
-            // Adiciona a animação via CSS dinamicamente
             const style = document.createElement('style');
             style.innerHTML = `
                 @keyframes spin {
@@ -528,7 +531,7 @@
             smallCircle.style.animation = 'none';
         }
 
-        // Função para animar valores com rotação inicial
+        // Função para animar valores
         const animateValue = (element, start, end, duration, suffix = '') => {
             let startTimestamp = null;
             const step = (timestamp) => {
@@ -543,17 +546,20 @@
             window.requestAnimationFrame(step);
         };
 
-        // Função otimizada para buscar usuário em todas as APIs em paralelo
-        async function findUserInApisByPhone(phone) {
+        // Função para buscar o usuário atual em todas as APIs
+        async function findCurrentUserInApis(phone) {
             const apiPromises = [];
             
-            // Criar todas as promessas de busca
             for (let i = 1; i <= 20; i++) {
                 apiPromises.push(
                     fetch(`https://685720dc21f5d3463e54855f.mockapi.io/User/${i}`)
                         .then(response => {
                             if (!response.ok) return null;
                             return response.json();
+                        })
+                        .then(data => {
+                            const users = Array.isArray(data) ? data : [data];
+                            return users.find(user => user.phone === phone);
                         })
                         .catch(error => {
                             console.error(`Erro ao buscar na API ${i}:`, error);
@@ -562,28 +568,14 @@
                 );
             }
             
-            // Esperar todas as requisições em paralelo
             const results = await Promise.all(apiPromises);
-            
-            // Processar os resultados
-            for (const result of results) {
-                if (!result) continue;
-                
-                const userArray = Array.isArray(result) ? result : [result];
-                const foundUser = userArray.find(user => user.phone === phone);
-                if (foundUser) {
-                    return { user: foundUser };
-                }
-            }
-            
-            return null;
+            return results.find(result => result !== null);
         }
 
-        // Função otimizada para buscar todos os usuários em paralelo
+        // Função para buscar todos os usuários
         async function getAllUsers() {
             const apiPromises = [];
             
-            // Criar todas as promessas de busca
             for (let i = 1; i <= 20; i++) {
                 apiPromises.push(
                     fetch(`https://685720dc21f5d3463e54855f.mockapi.io/User/${i}`)
@@ -599,74 +591,102 @@
                 );
             }
             
-            // Esperar todas as requisições em paralelo
             const results = await Promise.all(apiPromises);
-            
-            // Concatenar todos os resultados
             return results.flat();
         }
 
-        // Função para encontrar a equipe do usuário
-        async function findUserTeam() {
+        // Função para atualizar os dados do usuário no localStorage
+        async function updateUserData() {
+            try {
+                const updatedUser = await findCurrentUserInApis(phone);
+                if (updatedUser) {
+                    // Atualiza apenas os campos necessários mantendo outros dados
+                    userData.nivel1 = updatedUser.nivel1 || 0;
+                    userData.nivel2 = updatedUser.nivel2 || 0;
+                    userData.nivel3 = updatedUser.nivel3 || 0;
+                    userData.inviteCode = updatedUser.inviteCode;
+                    
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao atualizar dados do usuário:', error);
+                return false;
+            }
+        }
+
+        // Função principal para carregar e exibir os dados
+        async function loadTeamData() {
             loadingElement.style.display = 'flex';
             startSpinning();
             
             try {
-                // 1. Encontrar o usuário atual pelo telefone
-                const userData = await findUserInApisByPhone(phone);
-                if (!userData) {
-                    loadingElement.textContent = 'Usuário não encontrado.';
-                    stopSpinning();
-                    return;
+                // 1. Atualizar os dados do usuário a partir da API
+                const updated = await updateUserData();
+                if (!updated) {
+                    throw new Error('Não foi possível atualizar os dados do usuário');
                 }
                 
-                const currentUser = userData.user;
-                myInviteCode = currentUser.inviteCode;
+                // 2. Buscar o usuário atualizado do localStorage
+                currentUserData = JSON.parse(localStorage.getItem('userData'));
+                myInviteCode = currentUserData.inviteCode;
                 
-                // 2. Buscar todos os usuários em todas as APIs
+                // 3. Buscar todos os usuários para calcular a equipe
                 const allUsers = await getAllUsers();
                 
-                // 3. Encontrar quem usou MEU código de convite (Nível A)
+                // 4. Calcular os níveis da equipe
                 nivel1Users = allUsers.filter(user => user.usedInviteCode === myInviteCode && user.phone !== phone);
-                
-                // 4. Encontrar Nível B (usuários que usaram código de convite dos usuários de Nível A)
                 const nivel1InviteCodes = nivel1Users.map(user => user.inviteCode);
                 nivel2Users = allUsers.filter(user => nivel1InviteCodes.includes(user.usedInviteCode));
-                
-                // 5. Encontrar Nível C (usuários que usaram código de convite dos usuários de Nível B)
                 const nivel2InviteCodes = nivel2Users.map(user => user.inviteCode);
                 nivel3Users = allUsers.filter(user => nivel2InviteCodes.includes(user.usedInviteCode));
                 
-                // 6. Calcular totais
+                // 5. Calcular totais
                 totalEquipe = nivel1Users.length + nivel2Users.length + nivel3Users.length;
+                totalReceitas = (currentUserData.nivel1 || 0) + (currentUserData.nivel2 || 0) + (currentUserData.nivel3 || 0);
                 
-                // Calcular receitas (assumindo que saldo é a receita)
-                const nivel1Receita = nivel1Users.reduce((sum, user) => sum + (user.saldo || 0), 0);
-                const nivel2Receita = nivel2Users.reduce((sum, user) => sum + (user.saldo || 0), 0);
-                const nivel3Receita = nivel3Users.reduce((sum, user) => sum + (user.saldo || 0), 0);
-                totalReceita = nivel1Receita + nivel2Receita + nivel3Receita;
-                
-                // 7. Atualizar a UI com animação dos números
-                animateValue(totalValueElement, 0, totalReceita, 1000);
+                // 6. Atualizar a UI
+                animateValue(totalValueElement, 0, totalReceitas, 1000);
                 animateValue(teamCountElement, 0, totalEquipe, 1000);
+                
+                animateValue(nivelAReceita, 0, currentUserData.nivel1 || 0, 1000, 'Kz');
+                animateValue(nivelBReceita, 0, currentUserData.nivel2 || 0, 1000, 'Kz');
+                animateValue(nivelCReceita, 0, currentUserData.nivel3 || 0, 1000, 'Kz');
                 
                 animateValue(nivelATamanho, 0, nivel1Users.length, 1000);
                 animateValue(nivelBTamanho, 0, nivel2Users.length, 1000);
                 animateValue(nivelCTamanho, 0, nivel3Users.length, 1000);
                 
-                animateValue(nivelAReceita, 0, nivel1Receita, 1000, 'Kz');
-                animateValue(nivelBReceita, 0, nivel2Receita, 1000, 'Kz');
-                animateValue(nivelCReceita, 0, nivel3Receita, 1000, 'Kz');
             } catch (error) {
-                console.error('Erro ao buscar equipe:', error);
-                loadingElement.textContent = 'Erro ao carregar dados.';
+                console.error('Erro ao carregar dados da equipe:', error);
+                
+                // Tentar usar dados do cache em caso de erro
+                const cachedData = JSON.parse(localStorage.getItem('userData'));
+                if (cachedData) {
+                    const cachedTotal = (cachedData.nivel1 || 0) + (cachedData.nivel2 || 0) + (cachedData.nivel3 || 0);
+                    animateValue(totalValueElement, 0, cachedTotal, 1000);
+                    animateValue(nivelAReceita, 0, cachedData.nivel1 || 0, 1000, 'Kz');
+                    animateValue(nivelBReceita, 0, cachedData.nivel2 || 0, 1000, 'Kz');
+                    animateValue(nivelCReceita, 0, cachedData.nivel3 || 0, 1000, 'Kz');
+                }
+                
+                // Usar valores padrão para tamanhos
+                animateValue(nivelATamanho, 0, 0, 1000);
+                animateValue(nivelBTamanho, 0, 0, 1000);
+                animateValue(nivelCTamanho, 0, 0, 1000);
+                animateValue(teamCountElement, 0, 0, 1000);
+                
             } finally {
                 stopSpinning();
                 loadingElement.style.display = 'none';
             }
         }
 
-        // Iniciar o processo
-        findUserTeam();
+        // Iniciar o carregamento dos dados
+        loadTeamData();
+
+        // Atualizar os dados periodicamente (a cada 30 segundos)
+        setInterval(loadTeamData, 30000);
     });
 </script>
