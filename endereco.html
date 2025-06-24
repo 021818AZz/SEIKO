@@ -172,7 +172,7 @@
       const inviteCode = userData.inviteCode || '';
 
       // Gerar link de convite com o código
-      const inviteLink = `https://seiko-7vz.pages.dev/register??invitCode=${inviteCode}`;
+      const inviteLink = `https://seiko-7vz.pages.dev/register?invitCode=${inviteCode}`;
       
       // Atualizar QR Code com o link completo
       document.getElementById('qrCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(inviteLink)}`;
