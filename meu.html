@@ -16,7 +16,6 @@
   color: white;
 }
 
-
     .container {
       max-width: 400px;
       margin: 0 auto;
@@ -111,10 +110,19 @@
       border-bottom: 1px solid #1f3b53;
       font-size: 16px;
       cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .menu-item:last-child {
       border-bottom: none;
+    }
+
+    .back-icon {
+      width: 20px;
+      height: 20px;
+      margin-left: 10px;
     }
 
     .chat-icon {
@@ -202,14 +210,46 @@
     </div>
     <!-- MENU -->
     <div class="menu">
-      <div class="menu-item" onclick="window.location.href='equipe.html'">Minha equipe</div>
-      <div class="menu-item" onclick="window.location.href='endereco.html'">Convidar amigos</div>
-      <div class="menu-item" onclick="window.location.href='alterar_senha.html'">Alterar sua senha</div>
-      <div class="menu-item" onclick="window.location.href='conta_recepcao.html'">A minha conta de recepção</div>
-      <div class="menu-item" onclick="window.location.href='troca.html'">Troca de Voucher</div>
-      <div class="menu-item" onclick="window.location.href='registro.html'">Transação</div>
-      <div class="menu-item" onclick="window.location.href='chat.html'">Conversas com apoio ao cliente</div>
-      <div class="menu-item" onclick="logout()">Saída</div> <!-- Alterado para chamar a função logout() -->
+      <div class="menu-item" onclick="window.location.href='equipe.html'">Minha equipe
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="window.location.href='endereco.html'">Convidar amigos
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="window.location.href='alterar_senha.html'">Alterar sua senha
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="window.location.href='conta_recepcao.html'">A minha conta de recepção
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="window.location.href='troca.html'">Troca de Voucher
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="window.location.href='registro.html'">Transação
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="window.location.href='chat.html'">Conversas com apoio ao cliente
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="menu-item" onclick="logout()">Saída
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </div>
 
     <!-- BOTÃO DE CHAT -->
