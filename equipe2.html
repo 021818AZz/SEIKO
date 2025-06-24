@@ -503,9 +503,9 @@
                                 teamData.nivel2.members.length + 
                                 teamData.nivel3.members.length;
             
-            const totalIncome = teamData.nivel1.members.reduce((sum, m) => sum + (m.saldo || 0), 0) +
-                                teamData.nivel2.members.reduce((sum, m) => sum + (m.saldo || 0), 0) +
-                                teamData.nivel3.members.reduce((sum, m) => sum + (m.saldo || 0), 0);
+            const totalIncome = teamData.nivel1.members.reduce((sum, m) => sum + (m.receita || 0), 0) +
+                                teamData.nivel2.members.reduce((sum, m) => sum + (m.receita || 0), 0) +
+                                teamData.nivel3.members.reduce((sum, m) => sum + (m.receita || 0), 0);
             
             animateValue(totalMembersEl, 0, totalMembers, 800);
             animateValue(totalIncomeEl, 0, totalIncome, 800, 'Kz');
