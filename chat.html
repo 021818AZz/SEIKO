@@ -526,7 +526,7 @@
   let microphone;
   let dataArray;
   
-  // Dados do usuário
+  // Dados do usuário e controle de mensagens
   const userDataString = localStorage.getItem('userData');
   if (!userDataString) {
     alert('Por favor, faça login novamente.');
@@ -536,6 +536,7 @@
   
   const userData = JSON.parse(userDataString);
   const userPhone = userData.phone || '';
+  let lastLoadedMessages = [];
 
   // Funções utilitárias
   function formatDateTime(date) {
@@ -584,6 +585,17 @@
 
   // Funções para exibir mensagens
   function displayTextMessage(text, isUser, createdAt, read = false) {
+    // Verifica se a mensagem já existe no chat
+    const existingMessages = chatContainer.querySelectorAll('.message');
+    for (const msg of existingMessages) {
+      const msgText = msg.querySelector('div:first-child')?.textContent;
+      const msgTime = msg.querySelector('.message-time')?.textContent.includes(formatDateTime(createdAt));
+      
+      if (msgText === text && msgTime) {
+        return; // Mensagem já existe, não exibir novamente
+      }
+    }
+    
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'admin-message'}`;
     
@@ -660,7 +672,13 @@
 
   // Carregar e enviar mensagens
   async function loadMessages() {
-    chatContainer.innerHTML = '<div class="loading">Carregando mensagens...</div>';
+    const loadingIndicator = document.querySelector('.loading');
+    if (!loadingIndicator) {
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'loading';
+      loadingDiv.textContent = 'Carregando mensagens...';
+      chatContainer.appendChild(loadingDiv);
+    }
     
     try {
       const response = await fetch('https://api-wped.onrender.com/user');
@@ -670,16 +688,26 @@
       const messages = Array.isArray(conversations) ? conversations : [conversations];
       const userMessages = messages.filter(msg => msg.phone === userPhone);
       
-      chatContainer.innerHTML = '';
+      // Verificar se há novas mensagens
+      const newMessages = userMessages.filter(newMsg => 
+        !lastLoadedMessages.some(oldMsg => 
+          oldMsg.createdAt === newMsg.createdAt && 
+          oldMsg.text === newMsg.text &&
+          oldMsg.mediaType === newMsg.mediaType
+        )
+      );
       
-      if (userMessages.length === 0) {
-        chatContainer.innerHTML = '<div class="loading">Nenhuma mensagem encontrada</div>';
+      if (newMessages.length === 0) {
+        const loadingIndicator = document.querySelector('.loading');
+        if (loadingIndicator) loadingIndicator.remove();
         return;
       }
       
-      userMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      // Ordenar novas mensagens por data
+      newMessages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
       
-      userMessages.forEach(msg => {
+      // Adicionar novas mensagens ao chat
+      newMessages.forEach(msg => {
         if (msg.mediaType && msg.mediaData) {
           displayMedia(msg.text || '', msg.mediaType, msg.mediaData, msg.sender === 'user', msg.createdAt, msg.read);
         } else if (msg.text) {
@@ -687,10 +715,26 @@
         }
       });
       
+      // Atualizar as últimas mensagens carregadas
+      lastLoadedMessages = userMessages;
+      
+      // Remover o indicador de carregamento
+      const loadingIndicator = document.querySelector('.loading');
+      if (loadingIndicator) loadingIndicator.remove();
+      
+      // Rolagem automática para a última mensagem
       chatContainer.scrollTop = chatContainer.scrollHeight;
     } catch (error) {
       console.error('Erro ao carregar mensagens:', error);
-      chatContainer.innerHTML = '<div class="loading">Erro ao carregar mensagens</div>';
+      const loadingIndicator = document.querySelector('.loading');
+      if (loadingIndicator) {
+        loadingIndicator.textContent = 'Erro ao carregar mensagens';
+      } else {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'loading';
+        errorDiv.textContent = 'Erro ao carregar mensagens';
+        chatContainer.appendChild(errorDiv);
+      }
     }
   }
   
@@ -750,7 +794,8 @@
       
       if (!response.ok) throw new Error('Erro ao enviar mensagem');
       
-      loadMessages();
+      // Atualizar a lista de mensagens carregadas
+      lastLoadedMessages.push(newMessage);
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       alert('Erro ao enviar mensagem. Tente novamente.');
@@ -871,8 +916,10 @@
         
         if (!response.ok) throw new Error('Erro ao enviar áudio');
         
+        // Adicionar à lista de mensagens carregadas
+        lastLoadedMessages.push(newMessage);
+        
         audioModal.style.display = 'none';
-        loadMessages();
       };
       
     } catch (error) {
